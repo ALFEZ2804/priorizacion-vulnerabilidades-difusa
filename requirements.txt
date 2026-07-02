@@ -1,0 +1,33 @@
+# Lógica difusa
+scikit-fuzzy==0.5.0
+networkx==3.6.1  # dependencia de skfuzzy.control no declarada por el paquete
+scipy==1.17.1
+
+# Datos y procesado
+pandas==3.0.2
+numpy==2.4.4
+pyarrow==24.0.0
+
+# HTTP
+requests==2.33.1
+python-dotenv==1.2.2
+
+# ML baselines
+scikit-learn==1.8.0  # fijado: el rf_model.joblib se serializa con esta versión (evita avisos al cargarlo)
+joblib==1.5.3
+
+# Visualización (figuras de resultados)
+matplotlib==3.10.9
+
+# Web app
+fastapi==0.136.1
+starlette==1.0.0
+uvicorn[standard]==0.46.0
+pydantic==2.13.3
+jinja2==3.1.6
+anyio==4.13.0
+
+# Tests
+pytest==9.0.3
+pytest-asyncio==1.3.0
+httpx==0.28.1  # lo necesita starlette.testclient en tests/test_api.py

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Priorización difusa de vulnerabilidades</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Priorización difusa de vulnerabilidades</h1>
+      <p class="subtitle">Sistema de inferencia difuso jerárquico · CVSS + EPSS + CISA KEV</p>
+    </div>
+    <div class="stats" id="stat-chips"></div>
+  </header>
+
+  <main>
+    <!-- Vista 1: ranking + resultados -->
+    <div id="ranking-view">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Ranking de vulnerabilidades</h2>
+          <div class="controls">
+            <input type="search" id="search" placeholder="Buscar CVE (p. ej. CVE-2020-17519)">
+            <label>Ordenar por
+              <select id="sort">
+                <option value="priority">Prioridad (FIS)</option>
+                <option value="cvss">CVSS</option>
+                <option value="epss">EPSS</option>
+                <option value="severity">Severidad</option>
+                <option value="threat">Amenaza</option>
+              </select>
+            </label>
+            <label class="chk"><input type="checkbox" id="only-kev"> Solo explotadas (KEV)</label>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table id="vuln-table">
+            <thead>
+              <tr>
+                <th>#</th><th>CVE</th><th>Prioridad</th><th>Severidad</th>
+                <th>Amenaza</th><th>CVSS</th><th>EPSS</th><th>KEV</th>
+              </tr>
+            </thead>
+            <tbody id="vuln-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pager">
+          <button id="prev">‹ Anterior</button>
+          <span id="page-info"></span>
+          <button id="next">Siguiente ›</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Resultados de la evaluación</h2></div>
+        <div class="charts">
+          <div id="chart-methods" class="chart"></div>
+          <div id="chart-distribution" class="chart"></div>
+          <div id="chart-robustness" class="chart"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Vista 2: detalle de una vulnerabilidad (pantalla aparte) -->
+    <section class="panel detail-view" id="detail-view" hidden>
+      <button class="back" id="detail-back">‹ Volver al ranking</button>
+      <div class="panel-head"><h2 id="detail-title">Detalle</h2></div>
+      <p class="summary" id="detail-summary"></p>
+
+      <div class="detail-grid">
+        <div>
+          <h3>Cadena de inferencia</h3>
+          <div id="chain"></div>
+        </div>
+        <div>
+          <h3>Posición en cada método</h3>
+          <table class="compare"><thead>
+            <tr><th>Método</th><th>Puntuación</th><th>Posición</th></tr>
+          </thead><tbody id="compare-body"></tbody></table>
+          <p class="hint">La posición (rango) muestra dónde coloca cada método esta
+            vulnerabilidad entre las 92.350 del conjunto.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Trabajo de Fin de Grado · Alberto Fernández Rodríguez · 2026 ·
+       <a href="/docs">Documentación de la API</a></p>
+  </footer>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>

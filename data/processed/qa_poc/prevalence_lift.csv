@@ -1,0 +1,2 @@
+P(PoC) global,n con PoC,tasa base P(y=1),P(PoC | y=1),P(PoC | y=0),P(y=1 | PoC),P(y=1 | noPoC),lift = P(y=1|PoC)/base,positivos con PoC
+0.0121,1106,0.000806,0.1622,0.0119,0.01085,0.000684,13.46,12
