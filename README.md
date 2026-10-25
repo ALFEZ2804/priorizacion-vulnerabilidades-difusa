@@ -1,114 +1,96 @@
-# Priorización de vulnerabilidades con lógica difusa
+# Explainable Fuzzy Vulnerability Prioritization
 
-Trabajo de Fin de Grado. Un sistema de inferencia difusa que ordena vulnerabilidades por
-prioridad cruzando tres fuentes públicas: la severidad técnica de CVSS (NVD), la
-probabilidad de explotación que estima EPSS y las vulnerabilidades con explotación ya
-confirmada del catálogo CISA KEV. En lugar de un número opaco, devuelve una prioridad
-continua y puede explicar, regla a regla, por qué cada CVE acabó donde acabó.
+Bachelor's thesis project. A hierarchical fuzzy-inference system that prioritizes vulnerabilities by combining three public sources: CVSS severity from NVD, EPSS exploitation probability, and confirmed exploitation in the CISA KEV catalog. Instead of an opaque score, it produces a continuous priority and can explain which rules contributed to each result.
 
-Para ver si merece la pena, el ranking se compara con CVSS a secas, con EPSS, con una
-combinación de ambos y con un Random Forest. La validación es hacia atrás: de las
-vulnerabilidades que puso arriba, cuántas entraron de verdad en KEV después.
+The system is compared against CVSS alone, EPSS, a combined baseline, and a Random Forest. The evaluation is temporal: it measures how many vulnerabilities ranked highly were later added to KEV.
 
-La idea de fondo es sencilla. Priorizar solo con CVSS se queda corto, porque mide lo
-grave que es un fallo, no lo probable que es que lo exploten. Los modelos de datos
-aciertan más, pero son cajas negras. Esto busca el punto medio: competir en precisión
-sin perder la capacidad de explicar cada decisión, y aguantar cuando los datos llegan
-incompletos o con ruido.
+CVSS measures how severe a vulnerability is, but not how likely it is to be exploited. Machine-learning models can improve prediction but are harder to explain. This project explores a middle ground: competitive ranking quality with traceable decisions and robustness to missing or noisy inputs.
 
-## Qué hay dentro
+## Repository map
 
-- `src/fis/`: el sistema difuso jerárquico. Tres subsistemas encadenados (severidad,
-  amenaza y prioridad) con la explicación regla a regla. Es el núcleo del trabajo.
-- `src/pipeline/`: ingesta y unificación de NVD, EPSS y KEV, con un corte temporal que
-  evita que la evaluación haga trampa.
-- `src/baselines/`: los métodos contra los que se compara (CVSS, EPSS, combinado y
-  Random Forest).
-- `src/evaluation/`: métricas de ranking (Precision@K, Recall@K, NDCG), significancia por
-  bootstrap y análisis de robustez.
-- `app/`: una web en FastAPI para explorar el ranking y ver la explicación de cada CVE.
+- src/fis/: hierarchical fuzzy inference system for severity, threat, and priority, including rule-level explanations.
+- src/pipeline/: ingestion and unification of NVD, EPSS, and KEV data, with temporal cutoffs to avoid evaluation leakage.
+- src/baselines/: CVSS, EPSS, combined, and Random Forest baselines.
+- src/evaluation/: ranking metrics, bootstrap significance tests, and robustness analyses.
+- app/: FastAPI web application for exploring rankings and explanations.
+- scripts/: dataset construction, evaluation, and calibration.
+- tests/: pytest suite.
+- data/processed/: the processed dataset, model, and evaluation outputs used by the app.
 
-## Estructura
+## Requirements
 
-```
-src/
-  pipeline/     ingesta y unificación de las fuentes
-  fis/          sistema de inferencia difusa jerárquico
-  baselines/    CVSS, EPSS, combinado, Random Forest
-  evaluation/   métricas, comparativa, significancia
-app/            aplicación web (FastAPI + frontend estático)
-scripts/        orquestadores del pipeline, evaluación y calibración
-tests/          pruebas unitarias (pytest)
-data/           dataset unificado y resultados
-```
+- Python 3.11 or newer
+- Docker, or Python and pip for a local environment
 
-## Instalación
+No API key is needed to run the web app or the evaluation on the committed processed data. NVD_API_KEY is optional and only needed to rebuild the dataset from the source APIs. Without it, NVD requests may be slower.
 
-```bash
+## Try it with Docker
+
+The repository includes a Dockerfile with the processed data and runtime dependencies:
+
+~~~sh
+docker build -t fuzzy-vulnerability-prioritization .
+docker run --rm -p 8000:8000 fuzzy-vulnerability-prioritization
+~~~
+
+Open http://localhost:8000.
+
+To run the evaluation or tests in the same image:
+
+~~~sh
+docker run --rm fuzzy-vulnerability-prioritization python scripts/run_evaluation.py
+docker run --rm fuzzy-vulnerability-prioritization pytest
+~~~
+
+## Run without Docker
+
+Create a virtual environment and install dependencies:
+
+~~~sh
 python -m venv .venv
-# Windows: .venv\Scripts\activate   |   Linux/Mac: source .venv/bin/activate
+~~~
+
+On Windows:
+
+~~~powershell
+.venv\Scripts\Activate.ps1
+~~~
+
+On macOS or Linux:
+
+~~~sh
+source .venv/bin/activate
+~~~
+
+Then install and start the app:
+
+~~~sh
 pip install -r requirements.txt
-```
+uvicorn app.main:app --reload
+~~~
 
-Para ejecutarlo no hace falta ninguna clave: los datos ya procesados van incluidos en
-`data/processed/`. La `NVD_API_KEY` (gratuita, en
-<https://nvd.nist.gov/developers/request-an-api-key>) solo se necesita si quieres
-reconstruir el dataset desde las APIs; en ese caso, copia `.env.example` a `.env` y ponla
-ahí. Sin clave, NVD también responde, solo que más despacio.
+Open http://127.0.0.1:8000. The interactive API documentation is available at /docs.
 
-## Con Docker (sin instalar nada)
+## Rebuild and evaluate the dataset
 
-Si tienes Docker es lo más cómodo, porque no necesitas ni entorno ni dependencias:
+The processed dataset and evaluation outputs are included, so rebuilding is optional. To reproduce the pipeline from the source APIs:
 
-```bash
-docker build -t fuzzy-vuln .
-docker run -p 8000:8000 fuzzy-vuln    # abre http://localhost:8000
-```
-
-Los datos viajan dentro de la imagen, así que la app levanta sin descargar nada. Y si
-quieres correr la evaluación o los tests dentro del contenedor:
-
-```bash
-docker run --rm fuzzy-vuln python scripts/run_evaluation.py
-docker run --rm fuzzy-vuln pytest
-```
-
-## Uso
-
-Como los datos procesados vienen incluidos, puedes ir directo a la evaluación o a la app.
-Los dos primeros pasos solo hacen falta si quieres reconstruir el dataset de cero.
-
-```bash
-# (opcional) 1. Reconstruir el dataset unificado desde las APIs
+~~~sh
 python scripts/build_dataset.py
-
-# (opcional) 2. Puntuar el dataset con el sistema difuso jerárquico
 python scripts/score_dataset.py
-
-# 3. Evaluar el FIS frente a los métodos de referencia
 python scripts/run_evaluation.py
-
-# 4. Significancia estadística de la comparativa
 python scripts/run_significance.py
+~~~
 
-# 5. Levantar la aplicación web
-uvicorn app.main:app --reload   # http://127.0.0.1:8000  (docs en /docs)
-```
+The NVD API key can be configured in .env based on .env.example. Raw API data is not committed; the build script downloads it as needed.
 
-## Reproducibilidad
+## Tests
 
-En `data/processed/` está todo lo necesario: el dataset unificado, los splits temporales,
-el ranking ya puntuado, el modelo Random Forest entrenado y los CSV de resultados. Con
-eso, la evaluación y la web corren sin reconstruir nada ni pedir clave. Lo único que no
-se versiona es `data/raw/`, los JSON crudos de las APIs (varios cientos de MB), que se
-regeneran con `scripts/build_dataset.py`.
-
-## Pruebas
-
-```bash
+~~~sh
 pytest
-```
+~~~
 
-## Licencia
+## Docker notes
 
-Trabajo de Fin de Grado. Uso académico.
+The image includes the processed dataset, allowing the web application and evaluation to run without fetching source data. Docker is optional; the same commands can be run in a local Python environment.
+
