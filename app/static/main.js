@@ -25,10 +25,10 @@ async function loadVulns() {
   const data = await fetch(`/api/vulnerabilities?${p}`).then((r) => r.json());
   const body = $("vuln-body");
   body.innerHTML = "";
-  for (const row of data.rows) {
+  for (const [i, row] of data.rows.entries()) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${row.rank_fis}</td>
+      <td>${data.offset + i + 1}</td>
       <td class="cve">${row.cve_id}</td>
       <td><span class="prio ${prioClass(row.priority)}">${fmt(row.priority, 1)}</span></td>
       <td>${fmt(row.severity, 1)}</td>
