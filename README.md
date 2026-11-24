@@ -1,5 +1,7 @@
 # Explainable Fuzzy Vulnerability Prioritization
 
+[![Tests](https://github.com/ALFEZ2804/priorizacion-vulnerabilidades-difusa/actions/workflows/tests.yml/badge.svg)](https://github.com/ALFEZ2804/priorizacion-vulnerabilidades-difusa/actions/workflows/tests.yml)
+
 Bachelor's thesis project. A hierarchical fuzzy-inference system that prioritizes vulnerabilities by combining three public sources: CVSS severity from NVD, EPSS exploitation probability, and confirmed exploitation in the CISA KEV catalog. Instead of an opaque score, it produces a continuous priority and can explain which rules contributed to each result.
 
 The system is compared against CVSS alone, EPSS, a combined baseline, and a Random Forest. The evaluation is temporal: it measures how many vulnerabilities ranked highly were later added to KEV.
